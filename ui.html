@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Node Info Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 90%;
+      margin-top: 8px;
+    }
+
+    button {
+      width: max-content;
+      padding: 8px;
+      margin-top: 8px;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      color: #888888;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+  <textarea id="jsonOutput"></textarea>
+  <div style="display: flex; justify-content: space-between">
+    <button id="parseButton">解析选中对象</button>
+    <button id="clearButton" disabled="true">清空内容</button> <!-- 新增按钮 -->
+    <button id="copyButton" disabled="true">复制到剪贴板</button>
+  </div>
+
+  <script>
+    const parseButton = document.getElementById('parseButton');
+    const clearButton = document.getElementById('clearButton');
+    const copyButton = document.getElementById('copyButton');
+    const jsonOutput = document.getElementById('jsonOutput');
+
+    parent.postMessage({ pluginMessage: { type: 'get-selection' } }, '*');
+    
+    // 向插件主逻辑发送消息，请求选中对象信息
+    parseButton.onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'get-selection' } }, '*');
+    };
+
+    // 复制文本区域的内容到剪贴板
+    copyButton.onclick = () => {
+      jsonOutput.select();
+      document.execCommand('copy');
+    };
+
+
+    // 清空文本区域的内容
+    clearButton.onclick = () => {
+      jsonOutput.value = '';
+      jsonOutput.dispatchEvent(jsonChange);
+    };
+
+    // 定义一个函数来更新按钮的状态
+    function updateButtonStatus() {
+      var isDisabled = jsonOutput.value.length <= 0;
+      copyButton.disabled = isDisabled;
+      clearButton.disabled = isDisabled;
+    }
+
+    // 添加 input 和 change 事件监听器
+    jsonOutput.addEventListener('input', updateButtonStatus);
+    jsonOutput.addEventListener('change', updateButtonStatus);
+
+    // 初始化按钮的状态
+    updateButtonStatus();
+
+    const jsonChange = new Event('change');
+    // 接收来自插件主逻辑的消息
+    onmessage = (event) => {
+      const message = event.data.pluginMessage;
+      if (message) {
+        jsonOutput.value = message;
+      } else {
+        jsonOutput.value = '未能获取节点信息。';
+      }
+      jsonOutput.dispatchEvent(jsonChange);
+    };
+  </script>
+</body>
+
+</html>
