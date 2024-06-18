@@ -1,0 +1,9 @@
+{
+    "parserOptions": {
+      "project": "./tsconfig.json",
+      "tsconfigRootDir": "./"
+    },
+    "rules": {
+      // your rules here
+    }
+  }

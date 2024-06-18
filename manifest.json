@@ -2,7 +2,7 @@
   "name": "FigExport",
   "id": "1371030955433141256",
   "api": "1.0.0",
-  "main": "code.js",
+  "main": "src/code.js",
   "capabilities": [],
   "enableProposedApi": false,
   "documentAccess": "dynamic-page",
@@ -10,7 +10,7 @@
     "figma",
     "figjam"
   ],
-  "ui": "ui.html",
+  "ui": "src/ui.html",
   "networkAccess": {
     "allowedDomains": [
       "none"
