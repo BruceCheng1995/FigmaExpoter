@@ -1,6 +1,5 @@
 figma.showUI(__html__, { width: 400, height: 900 });
 
-
 function collectNodeInfo(node: SceneNode): any {
   const nodeInfo = {
     id: node.id,
@@ -56,7 +55,7 @@ function test1() {
       node.fills = [
         {
           type: "SOLID",
-          color: {r:Math.random(),g:Math.random(),b:Math.random()}
+          color: { r: Math.random(), g: Math.random(), b: Math.random() },
         },
       ];
     }
@@ -138,8 +137,60 @@ function test3() {
 
 let currentJson = JSON.parse("{}");
 
+async function addName(node: any, group: any) {
+  let _name = node["name"] ? node["name"] : "";
+  const textNode = figma.createText();
+  await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+  textNode.characters = _name;
+  textNode.x = node.absoluteTransform[0][2];
+  textNode.y = node.absoluteTransform[1][2];
+  textNode.fills = [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }];
+
+  if ("children" in node) {
+    node.children.forEach((child: any) => {
+      addName(child, group);
+    });
+  }
+
+  group.appendChild(textNode);
+}
+
+function findNodesInArea(x: number, y: number, width: number, height: number): any[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isContained = (parentNode: any, child: any) => {
+    const parentRectangleScope = { x: parentNode.absoluteBoundingBox?.x, y: parentNode.absoluteBoundingBox?.y, endX: (parentNode.absoluteBoundingBox?.x || 0) + (parentNode.absoluteBoundingBox?.width || 0), endY: (parentNode.absoluteBoundingBox?.y || 0) + (parentNode.absoluteBoundingBox?.height || 0) }
+    const childRectangleScope = { x: child.absoluteBoundingBox?.x, y: child.absoluteBoundingBox?.y, endX: (child.absoluteBoundingBox?.x || 0) + (child.absoluteBoundingBox?.width || 0), endY: (child.absoluteBoundingBox?.y || 0) + (child.absoluteBoundingBox?.height || 0) }
+
+    return parentRectangleScope.x <= childRectangleScope.x && parentRectangleScope.endX >= childRectangleScope.endX && parentRectangleScope.y <= childRectangleScope.y && parentRectangleScope.endY >= childRectangleScope.endY
+  }
+
+  const result: any[] = []
+  const scopeNode = {
+    absoluteBoundingBox: {
+      x,
+      y,
+      width,
+      height,
+    },
+  }
+
+  const loop = (nodes: any[]) => {
+    nodes.forEach((node) => {
+      if (isContained(scopeNode, node) && node !== scopeNode) {
+        result.push(node)
+      } else if (node.children?.length) {
+        loop(node.children)
+      }
+    })
+  }
+
+  loop(figma.currentPage.children as any[])
+
+  return result
+}
+
 // 监听从 UI 发来的消息
-figma.ui.onmessage = (msg) => {
+figma.ui.onmessage = async (msg) => {
   if (msg.type === "get-selection") {
     const selection = figma.currentPage.selection;
 
@@ -164,5 +215,15 @@ figma.ui.onmessage = (msg) => {
   if (msg.type === "test3") {
     const result = test3();
     figma.ui.postMessage(result);
+  }
+
+  if (msg.type === "addName") {
+    const selection = figma.currentPage.selection;
+    if (selection.length > 0) {
+      const group = figma.group(selection, figma.currentPage);
+      for (const node of selection) {
+        await addName(node, group);
+      }
+    }
   }
 };
